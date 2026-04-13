@@ -105,4 +105,4 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           ssh -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "cd \"$DEPLOY_PATH\" && docker compose pull && docker compose up -d --remove-orphans --no-build"
+           "cd \"$DEPLOY_PATH\" && docker-compose pull && docker-compose up -d --remove-orphans"
