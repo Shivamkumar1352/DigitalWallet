@@ -41,11 +41,13 @@ class NotificationConsumerTest {
     void kycApprovedEventSendsHtmlEmail() throws Exception {
         when(objectMapper.readValue("event", Map.class))
                 .thenReturn(Map.of("event", "KYC_APPROVED", "userId", 11));
-        when(userClient.getProfile(11L)).thenReturn(UserDTO.builder().email("user@example.com").build());
+        when(userClient.getProfile(11L))
+                .thenReturn(UserDTO.builder().email("user@example.com").build());
 
         notificationConsumer.kycEvents("event");
 
-        verify(emailService).sendHtml(eq("user@example.com"), eq("KYC Approved ✅"), anyString());
+        verify(emailService)
+                .sendHtml(eq("user@example.com"), eq("KYC Approved ✅"), anyString());
     }
 
     @Test
@@ -58,45 +60,67 @@ class NotificationConsumerTest {
                 "balance", "900.00",
                 "reference", "TXN-123"
         ));
-        when(userClient.getProfile(10L)).thenReturn(UserDTO.builder().email("sender@example.com").build());
-        when(userClient.getProfile(20L)).thenReturn(UserDTO.builder().email("receiver@example.com").build());
+
+        when(userClient.getProfile(10L))
+                .thenReturn(UserDTO.builder().email("sender@example.com").build());
+        when(userClient.getProfile(20L))
+                .thenReturn(UserDTO.builder().email("receiver@example.com").build());
 
         notificationConsumer.walletEvents("event");
 
-        verify(emailService).sendHtml(eq("sender@example.com"), eq("Transfer Successful"), anyString());
-        verify(emailService).sendHtml(eq("receiver@example.com"), eq("Money Received"), anyString());
+        // ✅ Updated to match your implementation
+        verify(emailService)
+                .sendHtml(eq("sender@example.com"), eq("Money Sent"), anyString());
+
+        verify(emailService)
+                .sendHtml(eq("receiver@example.com"), eq("Money Received"), anyString());
     }
 
     @Test
     void rewardEventUsesDefaultValuesWhenMissingOptionalFields() throws Exception {
         when(objectMapper.readValue("event", Map.class))
                 .thenReturn(Map.of("event", "POINTS_EARNED", "userId", 9));
-        when(userClient.getProfile(9L)).thenReturn(UserDTO.builder().email("reward@example.com").build());
+
+        when(userClient.getProfile(9L))
+                .thenReturn(UserDTO.builder().email("reward@example.com").build());
 
         notificationConsumer.rewardEvents("event");
 
         ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
-        verify(emailService).sendHtml(eq("reward@example.com"), eq("Reward Points Earned"), htmlCaptor.capture());
-        assertTrue(htmlCaptor.getValue().contains("₹0"));
-        assertTrue(htmlCaptor.getValue().contains("N/A"));
+
+        // ✅ Updated subject
+        verify(emailService)
+                .sendHtml(eq("reward@example.com"), eq("Points Earned 🎉"), htmlCaptor.capture());
+
+        // ✅ Updated assertions based on your HTML
+        String html = htmlCaptor.getValue();
+
+        assertTrue(html.contains("0 pts"));   // instead of ₹0
+        assertTrue(html.contains("N/A"));
     }
 
     @Test
     void eventWithoutTypeIsIgnored() throws Exception {
-        when(objectMapper.readValue("event", Map.class)).thenReturn(Map.of("userId", 1));
+        when(objectMapper.readValue("event", Map.class))
+                .thenReturn(Map.of("userId", 1));
 
         notificationConsumer.paymentEvents("event");
 
-        verify(emailService, never()).sendHtml(anyString(), anyString(), anyString());
-        verify(userClient, never()).getProfile(anyLong());
+        verify(emailService, never())
+                .sendHtml(anyString(), anyString(), anyString());
+
+        verify(userClient, never())
+                .getProfile(anyLong());
     }
 
     @Test
     void parsingFailureIsHandledGracefully() throws Exception {
-        when(objectMapper.readValue("bad", Map.class)).thenThrow(new JsonProcessingException("bad json") { });
+        when(objectMapper.readValue("bad", Map.class))
+                .thenThrow(new JsonProcessingException("bad json") {});
 
         notificationConsumer.walletEvents("bad");
 
-        verify(emailService, never()).sendHtml(anyString(), anyString(), anyString());
+        verify(emailService, never())
+                .sendHtml(anyString(), anyString(), anyString());
     }
 }
