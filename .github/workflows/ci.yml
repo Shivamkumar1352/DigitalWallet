@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ci.yml"
+      - "api-gateway/**"
+      - "auth-service/**"
+      - "eureka-server/**"
+      - "notification_service/**"
+      - "reward-service/**"
+      - "user-service/**"
+      - "wallet-service/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci.yml"
+      - "api-gateway/**"
+      - "auth-service/**"
+      - "eureka-server/**"
+      - "notification_service/**"
+      - "reward-service/**"
+      - "user-service/**"
+      - "wallet-service/**"
+
+jobs:
+  build-test:
+    name: "${{ matrix.service.name }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: api-gateway
+            path: api-gateway
+            image: api-gateway
+          - name: auth-service
+            path: auth-service
+            image: auth-service
+          - name: eureka-server
+            path: eureka-server
+            image: eureka-server
+          - name: notification-service
+            path: notification_service
+            image: notification-service
+          - name: reward-service
+            path: reward-service
+            image: reward-service
+          - name: user-service
+            path: user-service
+            image: user-service
+          - name: wallet-service
+            path: wallet-service
+            image: wallet-service
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.service.path }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Verify with Maven
+        run: ./mvnw -B verify
+
+      - name: Build Docker image
+        run: docker build -t local/${{ matrix.service.image }}:${{ github.sha }} .
