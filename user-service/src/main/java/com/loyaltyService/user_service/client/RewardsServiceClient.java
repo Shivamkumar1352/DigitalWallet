@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(name = "rewards-service", fallback = RewardsServiceClientFallback.class)
 public interface RewardsServiceClient {
 
-    @PostMapping("/rewards/internal/create-account")
+    @PostMapping("/api/rewards/internal/create-account")
     void createRewardAccount(@RequestParam("userId") Long userId);
 }
